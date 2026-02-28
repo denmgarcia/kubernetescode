@@ -1,38 +1,31 @@
-node {
+node('docker-build') { // Use the label here
     def app
 
-    agent {
-        label 'docker-build'
-    }
-
     stage('Clone repository') {
-
-
         checkout scm
     }
 
-    stage('Build image') {
-
-       app = docker.build("denmgarcia/test")
-    }
-
-    stage('Test image') {
-
-
-        app.inside {
-            sh 'echo "Tests passed"'
+    // This block tells Jenkins: "Run these commands inside the docker container we defined"
+    container('docker') {
+        stage('Build image') {
+            app = docker.build("denmgarcia/test")
         }
-    }
 
-    stage('Push image') {
+        stage('Test image') {
+            app.inside {
+                sh 'echo "Tests passed"'
+            }
+        }
 
-        docker.withRegistry('https://registry.hub.docker.com', 'dockerhub') {
-            app.push("${env.BUILD_NUMBER}")
+        stage('Push image') {
+            docker.withRegistry('https://registry.hub.docker.com', 'dockerhub') {
+                app.push("${env.BUILD_NUMBER}")
+            }
         }
     }
 
     stage('Trigger ManifestUpdate') {
-                echo "triggering updatemanifestjob"
-                build job: 'updatemanifest', parameters: [string(name: 'DOCKERTAG', value: env.BUILD_NUMBER)]
-        }
+        echo "triggering updatemanifestjob"
+        build job: 'updatemanifest', parameters: [string(name: 'DOCKERTAG', value: env.BUILD_NUMBER)]
+    }
 }

@@ -1,6 +1,10 @@
 node {
     def app
 
+    agent {
+        label 'docker-build'
+    }
+
     stage('Clone repository') {
 
 
@@ -9,7 +13,7 @@ node {
 
     stage('Build image') {
 
-       app = docker.build("cyborden/test")
+       app = docker.build("denmgarcia/test")
     }
 
     stage('Test image') {
